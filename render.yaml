@@ -13,7 +13,7 @@ services:
         value: "false"
       - key: ExposeOtpForDevelopment
         value: "false"
-      - key: ConnectionStrings__DefaultConnection
+      - key: MYSQL_ADDON_URI
         sync: false
       - key: Jwt__Issuer
         value: FlipShop

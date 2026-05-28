@@ -18,7 +18,7 @@ ASPNETCORE_ENVIRONMENT=Production
 ASPNETCORE_URLS=http://+:8080
 UseInMemoryDatabase=false
 ExposeOtpForDevelopment=false
-ConnectionStrings__DefaultConnection=Server=YOUR_CLEVER_HOST;Port=3306;Database=YOUR_DB;User=YOUR_USER;Password=YOUR_PASSWORD;
+MYSQL_ADDON_URI=mysql://USER:PASSWORD@HOST:3306/DATABASE
 Jwt__Issuer=FlipShop
 Jwt__Audience=FlipShop.Angular
 Jwt__Key=CHANGE_THIS_TO_A_LONG_RANDOM_SECRET
@@ -31,5 +31,7 @@ Smtp__Password=YOUR_SMTP_PASSWORD
 Smtp__From=admin@yourdomain.com
 Smtp__AdminName=Bestic Fashion
 ```
+
+You can also use `ConnectionStrings__DefaultConnection=Server=HOST;Port=3306;Database=DATABASE;User=USER;Password=PASSWORD;`.
 
 After deploy, test `/health` and `/swagger`.
