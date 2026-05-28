@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FlipShop.Api/FlipShop.Api.csproj" />
+    <Project Path="src/FlipShop.Application/FlipShop.Application.csproj" />
+    <Project Path="src/FlipShop.Domain/FlipShop.Domain.csproj" />
+    <Project Path="src/FlipShop.Infrastructure/FlipShop.Infrastructure.csproj" />
+  </Folder>
+</Solution>

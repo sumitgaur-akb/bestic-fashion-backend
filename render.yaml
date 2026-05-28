@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: flipshop-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ASPNETCORE_URLS
+        value: http://+:8080
+      - key: UseInMemoryDatabase
+        value: "false"
+      - key: ExposeOtpForDevelopment
+        value: "false"
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
+      - key: Jwt__Issuer
+        value: FlipShop
+      - key: Jwt__Audience
+        value: FlipShop.Angular
+      - key: Jwt__Key
+        sync: false
+      - key: Cors__AllowedOrigins__0
+        sync: false
+      - key: Smtp__Host
+        sync: false
+      - key: Smtp__Port
+        value: "587"
+      - key: Smtp__EnableSsl
+        value: "true"
+      - key: Smtp__Username
+        sync: false
+      - key: Smtp__Password
+        sync: false
+      - key: Smtp__From
+        sync: false
+      - key: Smtp__AdminName
+        value: Bestic Fashion

@@ -1,0 +1,6 @@
+@FlipShop.Api_HostAddress = http://localhost:5197
+
+GET {{FlipShop.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
