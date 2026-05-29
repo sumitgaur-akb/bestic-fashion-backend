@@ -45,6 +45,30 @@ Or use:
 .\scripts\run-local.ps1
 ```
 
+## Gmail SMTP
+
+SMTP is configured for:
+
+```txt
+besticfashion.myntra@gmail.com
+smtp.gmail.com:587
+```
+
+The Gmail SMTP password is already configured in appsettings for this project. If you need to override it on another machine or deployment, set this environment variable before running:
+
+```powershell
+$env:Smtp__Password = "YOUR_16_CHARACTER_GOOGLE_APP_PASSWORD"
+.\scripts\run-local.ps1
+```
+
+For a persistent Windows user-level value:
+
+```powershell
+[Environment]::SetEnvironmentVariable("Smtp__Password", "YOUR_16_CHARACTER_GOOGLE_APP_PASSWORD", "User")
+```
+
+Open a new terminal after setting the persistent value.
+
 If build fails with a message like `The process cannot access the file ... because it is being used by another process`, stop the old backend process first:
 
 ```powershell
