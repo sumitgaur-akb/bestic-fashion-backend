@@ -1,8 +1,8 @@
-$ErrorActionPreference = "Stop"
-
 param(
     [switch]$AllDotnet
 )
+
+$ErrorActionPreference = "Stop"
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $ports = @(5000, 5001, 5197)
@@ -38,4 +38,3 @@ if ($AllDotnet) {
             Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
         }
 }
-    }

@@ -25,7 +25,7 @@ public sealed class OrderService(AppDbContext dbContext, IEmailService emailServ
         }, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
         await emailService.SendOrderConfirmationOtpAsync(cart.User.Email, otp, ToCartDto(cart), cancellationToken);
-        return ApiResponse<string>.Ok(otp, "Order confirmation OTP sent");
+        return ApiResponse<string>.Ok("OTP sent", "Order confirmation OTP sent");
     }
 
     public async Task<ApiResponse<OrderDto>> PlaceOrderAsync(long userId, CheckoutRequest request, CancellationToken cancellationToken)

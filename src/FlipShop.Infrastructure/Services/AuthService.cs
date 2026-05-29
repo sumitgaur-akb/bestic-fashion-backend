@@ -57,8 +57,8 @@ public sealed class AuthService(AppDbContext dbContext, IConfiguration configura
     public async Task<ApiResponse<string>> SendLoginOtpAsync(LoginWithOtpRequest request, CancellationToken cancellationToken)
     {
         var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Email == request.Destination || x.Mobile == request.Destination, cancellationToken);
-        var otp = await otpService.GenerateAsync(user?.Id, request.Destination, request.Purpose, cancellationToken);
-        return ApiResponse<string>.Ok(configuration.GetValue<bool>("ExposeOtpForDevelopment") ? otp : "OTP sent");
+        await otpService.GenerateAsync(user?.Id, request.Destination, request.Purpose, cancellationToken);
+        return ApiResponse<string>.Ok("OTP sent");
     }
 
     public async Task<ApiResponse<AuthResult>> VerifyOtpAsync(VerifyOtpRequest request, CancellationToken cancellationToken)
@@ -92,8 +92,8 @@ public sealed class AuthService(AppDbContext dbContext, IConfiguration configura
 
     public async Task<ApiResponse<string>> ResendOtpAsync(ResendOtpRequest request, CancellationToken cancellationToken)
     {
-        var otp = await otpService.GenerateAsync(null, request.Destination, request.Purpose, cancellationToken);
-        return ApiResponse<string>.Ok(configuration.GetValue<bool>("ExposeOtpForDevelopment") ? otp : "OTP resent");
+        await otpService.GenerateAsync(null, request.Destination, request.Purpose, cancellationToken);
+        return ApiResponse<string>.Ok("OTP resent");
     }
 
     private async Task AddRoleAsync(User user, UserRoleName roleName, CancellationToken cancellationToken)
