@@ -1,5 +1,7 @@
 # Backend Deployment
 
+For local MySQL setup and run commands, see [LOCAL_SETUP.md](LOCAL_SETUP.md).
+
 Deploy this folder to Render as a Docker web service.
 
 ## Render Settings
