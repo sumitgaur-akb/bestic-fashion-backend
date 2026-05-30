@@ -142,9 +142,12 @@ static void ValidateProductionConfiguration(IConfiguration configuration, IWebHo
         [
             defaultConnection,
             configuration["MYSQL_ADDON_URI"],
-            configuration["MYSQL_ADDON_HOST"]
+            configuration["MYSQL_URL"],
+            configuration["DATABASE_URL"],
+            configuration["MYSQL_ADDON_HOST"],
+            configuration["MYSQLHOST"]
         ],
-        "ConnectionStrings:DefaultConnection or MYSQL_ADDON_URI",
+        "ConnectionStrings:DefaultConnection or MYSQL_ADDON_URI/MYSQL_URL",
         errors);
     RequireAny(
         [
@@ -165,7 +168,10 @@ static void ValidateProductionConfiguration(IConfiguration configuration, IWebHo
         errors.Add("Cors:AllowedOrigins must contain only absolute HTTPS origins in production.");
     }
 
-    if (ContainsLocalOrPlaceholderDatabase(defaultConnection) || ContainsLocalOrPlaceholderDatabase(configuration["MYSQL_ADDON_URI"]))
+    if (ContainsLocalOrPlaceholderDatabase(defaultConnection)
+        || ContainsLocalOrPlaceholderDatabase(configuration["MYSQL_ADDON_URI"])
+        || ContainsLocalOrPlaceholderDatabase(configuration["MYSQL_URL"])
+        || ContainsLocalOrPlaceholderDatabase(configuration["DATABASE_URL"]))
     {
         errors.Add("Production database configuration must not point to localhost or use placeholder credentials.");
     }

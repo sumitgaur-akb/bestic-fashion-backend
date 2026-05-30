@@ -59,10 +59,20 @@ Cors__AllowedOrigins=https://YOUR_FRONTEND_DOMAIN
 ExposeOtpForDevelopment=false
 ```
 
-Use either `ConnectionStrings__DefaultConnection` or `MYSQL_ADDON_URI`, not both:
+Use one database source. `ConnectionStrings__DefaultConnection` is preferred, but Railway MySQL variables also work:
 
 ```txt
 MYSQL_ADDON_URI=mysql://USER:PASSWORD@HOST:3306/DATABASE
+MYSQL_URL=mysql://USER:PASSWORD@HOST:3306/DATABASE
+DATABASE_URL=mysql://USER:PASSWORD@HOST:3306/DATABASE
 ```
 
-If the backend logs show `Production configuration is incomplete`, Railway is missing one of `Jwt__Key`, `ConnectionStrings__DefaultConnection`/`MYSQL_ADDON_URI`, or `Cors__AllowedOrigins`.
+The backend also accepts Railway's split MySQL variables: `MYSQLHOST`, `MYSQLPORT`, `MYSQLDATABASE`, `MYSQLUSER`, and `MYSQLPASSWORD`.
+
+Optional:
+
+```txt
+MYSQL_SERVER_VERSION=8.0.36
+```
+
+If the backend logs show `Production configuration is incomplete`, Railway is missing one of `Jwt__Key`, `ConnectionStrings__DefaultConnection`/`MYSQL_ADDON_URI`/`MYSQL_URL`, or `Cors__AllowedOrigins`.

@@ -15,9 +15,10 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         var connectionString = GetConfiguredConnectionString(configuration);
+        var serverVersion = GetConfiguredServerVersion(configuration);
         services.AddDbContext<AppDbContext>(options =>
         {
-            options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+            options.UseMySql(connectionString, serverVersion);
         });
         services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -41,22 +42,25 @@ public static class DependencyInjection
             return defaultConnection;
         }
 
-        var mysqlAddonUri = configuration["MYSQL_ADDON_URI"];
+        var mysqlAddonUri = FirstConfigured(
+            configuration["MYSQL_ADDON_URI"],
+            configuration["MYSQL_URL"],
+            configuration["DATABASE_URL"]);
         if (!string.IsNullOrWhiteSpace(mysqlAddonUri))
         {
             return BuildConnectionStringFromUri(mysqlAddonUri);
         }
 
-        var host = configuration["MYSQL_ADDON_HOST"];
-        var database = configuration["MYSQL_ADDON_DB"];
-        var user = configuration["MYSQL_ADDON_USER"];
-        var password = configuration["MYSQL_ADDON_PASSWORD"];
+        var host = FirstConfigured(configuration["MYSQL_ADDON_HOST"], configuration["MYSQLHOST"]);
+        var database = FirstConfigured(configuration["MYSQL_ADDON_DB"], configuration["MYSQLDATABASE"]);
+        var user = FirstConfigured(configuration["MYSQL_ADDON_USER"], configuration["MYSQLUSER"]);
+        var password = FirstConfigured(configuration["MYSQL_ADDON_PASSWORD"], configuration["MYSQLPASSWORD"]);
         if (!string.IsNullOrWhiteSpace(host)
             && !string.IsNullOrWhiteSpace(database)
             && !string.IsNullOrWhiteSpace(user)
             && !string.IsNullOrWhiteSpace(password))
         {
-            _ = uint.TryParse(configuration["MYSQL_ADDON_PORT"], out var port);
+            _ = uint.TryParse(FirstConfigured(configuration["MYSQL_ADDON_PORT"], configuration["MYSQLPORT"]), out var port);
             return new MySqlConnectionStringBuilder
             {
                 Server = host,
@@ -69,6 +73,12 @@ public static class DependencyInjection
         }
 
         return "Server=localhost;Database=flipshop;User=root;Password=password;";
+    }
+
+    private static ServerVersion GetConfiguredServerVersion(IConfiguration configuration)
+    {
+        var version = FirstConfigured(configuration["MySql:ServerVersion"], configuration["MYSQL_SERVER_VERSION"]);
+        return MySqlServerVersion.Parse(string.IsNullOrWhiteSpace(version) ? "8.0.36" : version);
     }
 
     private static string BuildConnectionStringFromUri(string mysqlUri)
@@ -86,4 +96,7 @@ public static class DependencyInjection
             SslMode = MySqlSslMode.Preferred,
         }.ConnectionString;
     }
+
+    private static string? FirstConfigured(params string?[] values) =>
+        values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 }
