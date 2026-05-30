@@ -13,8 +13,14 @@ public static class DevelopmentDataSeeder
         var adminRole = await EnsureRoleAsync(dbContext, UserRoleName.Admin, cancellationToken);
 
         var sellerUser = await EnsureUserAsync(dbContext, "Demo Seller", "seller@flipshop.local", "8888888888", sellerRole, cancellationToken);
+        var onboardingSellerUser = await EnsureUserAsync(dbContext, "Onboarding Seller", "seller-onboarding@flipshop.local", "8666666666", sellerRole, cancellationToken);
         var customerUser = await EnsureUserAsync(dbContext, "Demo Customer", "customer@flipshop.local", "7777777777", customerRole, cancellationToken);
         var adminUser = await EnsureUserAsync(dbContext, "Admin User", "admin@flipshop.local", "9999999999", adminRole, cancellationToken);
+        if (!await dbContext.Sellers.AnyAsync(x => x.UserId == onboardingSellerUser.Id, cancellationToken))
+        {
+            await dbContext.Sellers.AddAsync(new Seller { User = onboardingSellerUser, DisplayName = "Onboarding Draft Store", Status = SellerStatus.Draft }, cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
 
         if (await dbContext.Products.AnyAsync(x => x.Slug == "flipshop-demo-phone", cancellationToken)) return;
 
@@ -26,8 +32,17 @@ public static class DevelopmentDataSeeder
                 User = sellerUser,
                 DisplayName = "Demo Seller Store",
                 Status = SellerStatus.Approved,
-                BusinessDetails = new SellerBusinessDetails { BusinessName = "Demo Seller Store", GstNumber = "GST-DEMO" },
-                BankDetails = new SellerBankDetails { BankName = "Demo Bank", AccountHolderName = "Demo Seller", AccountNumberMasked = "XXXX1234" }
+                BusinessDetails = new SellerBusinessDetails
+                {
+                    BusinessName = "Demo Seller Store",
+                    LegalBusinessName = "Demo Seller Store Private Limited",
+                    BusinessType = BusinessType.PrivateLimited,
+                    GstNumber = "GST-DEMO",
+                    BusinessAddress = "Demo Street, Bengaluru",
+                    Pincode = "560001"
+                },
+                BankDetails = new SellerBankDetails { BankName = "Demo Bank", AccountHolderName = "Demo Seller", AccountNumberMasked = "XXXX1234", AccountNumberLast4 = "1234" },
+                Warehouses = [new Warehouse { Name = "Primary Warehouse", Address = "Demo Street, Bengaluru", ContactPerson = "Demo Seller", ContactNumber = "8888888888", Pincode = "560001" }]
             };
             await dbContext.Sellers.AddAsync(seller, cancellationToken);
         }

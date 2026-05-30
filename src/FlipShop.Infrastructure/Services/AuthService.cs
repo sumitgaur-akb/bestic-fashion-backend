@@ -127,7 +127,8 @@ public sealed class AuthService(AppDbContext dbContext, IConfiguration configura
 
     private string CreateJwt(User user, IReadOnlyList<string> roles)
     {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"] ?? "development-key-change-this-to-32-characters"));
+        var jwtKey = configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key must be configured.");
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         var claims = new List<Claim> { new(JwtRegisteredClaimNames.Sub, user.Id.ToString()), new(ClaimTypes.NameIdentifier, user.Id.ToString()), new(ClaimTypes.Email, user.Email), new(ClaimTypes.Name, user.FullName) };
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
         var sellerStatus = dbContext.Sellers.AsNoTracking().Where(x => x.UserId == user.Id).Select(x => x.Status.ToString()).FirstOrDefault();

@@ -18,7 +18,6 @@ Health Check Path: /health
 ```txt
 ASPNETCORE_ENVIRONMENT=Production
 ASPNETCORE_URLS=http://+:8080
-UseInMemoryDatabase=false
 ExposeOtpForDevelopment=false
 MYSQL_ADDON_URI=mysql://USER:PASSWORD@HOST:3306/DATABASE
 Jwt__Issuer=FlipShop

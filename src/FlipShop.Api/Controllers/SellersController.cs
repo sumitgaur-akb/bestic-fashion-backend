@@ -8,6 +8,9 @@ namespace FlipShop.Api.Controllers;
 [Authorize(Roles = "Seller")]
 public sealed class SellersController(ISellerManagementService sellerService) : ApiControllerBase
 {
+    [HttpGet("onboarding")]
+    public Task<IActionResult> GetOnboarding(CancellationToken ct) => Wrap(sellerService.GetOnboardingAsync(CurrentUserId, ct));
+
     [HttpPost("onboarding")]
     public async Task<IActionResult> SubmitOnboarding(SellerOnboardingRequest request, CancellationToken ct)
     {

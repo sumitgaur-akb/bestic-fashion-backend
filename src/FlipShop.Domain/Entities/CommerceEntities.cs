@@ -36,7 +36,12 @@ public sealed class Seller : BaseEntity
     public decimal Rating { get; set; }
     public SellerBusinessDetails? BusinessDetails { get; set; }
     public SellerBankDetails? BankDetails { get; set; }
+    public string? ReviewNotes { get; set; }
+    public DateTime? SubmittedAt { get; set; }
+    public DateTime? ReviewedAt { get; set; }
     public ICollection<Product> Products { get; set; } = [];
+    public ICollection<Warehouse> Warehouses { get; set; } = [];
+    public ICollection<SellerDocument> Documents { get; set; } = [];
 }
 
 public sealed class SellerBusinessDetails : BaseEntity
@@ -44,8 +49,13 @@ public sealed class SellerBusinessDetails : BaseEntity
     public long SellerId { get; set; }
     public Seller Seller { get; set; } = null!;
     public string BusinessName { get; set; } = string.Empty;
+    public string LegalBusinessName { get; set; } = string.Empty;
+    public BusinessType BusinessType { get; set; } = BusinessType.Individual;
     public string? GstNumber { get; set; }
     public string? PanNumber { get; set; }
+    public string? CinNumber { get; set; }
+    public string BusinessAddress { get; set; } = string.Empty;
+    public string Pincode { get; set; } = string.Empty;
     public string? PickupAddress { get; set; }
 }
 
@@ -56,7 +66,31 @@ public sealed class SellerBankDetails : BaseEntity
     public string? AccountHolderName { get; set; }
     public string? BankName { get; set; }
     public string? AccountNumberMasked { get; set; }
+    public string? AccountNumberLast4 { get; set; }
     public string? IfscCode { get; set; }
+}
+
+public sealed class Warehouse : BaseEntity
+{
+    public long SellerId { get; set; }
+    public Seller Seller { get; set; } = null!;
+    public string Name { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
+    public string ContactPerson { get; set; } = string.Empty;
+    public string ContactNumber { get; set; } = string.Empty;
+    public string Pincode { get; set; } = string.Empty;
+}
+
+public sealed class SellerDocument : BaseEntity
+{
+    public long SellerId { get; set; }
+    public Seller Seller { get; set; } = null!;
+    public SellerDocumentType DocumentType { get; set; }
+    public string FileName { get; set; } = string.Empty;
+    public string FileUrl { get; set; } = string.Empty;
+    public string? ContentType { get; set; }
+    public SellerDocumentStatus Status { get; set; } = SellerDocumentStatus.Uploaded;
+    public string? ReviewNotes { get; set; }
 }
 
 public sealed class Category : BaseEntity

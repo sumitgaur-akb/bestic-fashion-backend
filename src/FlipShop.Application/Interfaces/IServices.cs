@@ -77,6 +77,7 @@ public interface ISellerDashboardService
 
 public interface ISellerManagementService
 {
+    Task<ApiResponse<SellerOnboardingStatusDto>> GetOnboardingAsync(long sellerUserId, CancellationToken cancellationToken);
     Task<ApiResponse<string>> SubmitOnboardingAsync(long sellerUserId, SellerOnboardingRequest request, CancellationToken cancellationToken);
     Task<ApiResponse<AdminSellerSummaryDto>> GetSummaryAsync(CancellationToken cancellationToken);
     Task<ApiResponse<IReadOnlyList<SellerReviewDto>>> GetSellersForReviewAsync(CancellationToken cancellationToken);

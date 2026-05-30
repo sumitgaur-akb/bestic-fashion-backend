@@ -11,7 +11,7 @@ Use this when running the backend on another machine with a local MySQL server.
 Current development connection string:
 
 ```txt
-Server=localhost;Port=3306;Database=flipshop_dev;User=root;Password=root;
+Server=localhost;Port=3306;Database=flipshop;User=root;Password=root;SslMode=None;
 ```
 
 ## MySQL
@@ -28,7 +28,7 @@ Make sure the configured user can connect:
 SELECT 1;
 ```
 
-The API calls `EnsureCreatedAsync()` on startup, so it creates the tables automatically when the database connection works.
+Run the SQL scripts in the database folder before starting the API. The API connects to the configured MySQL database and does not create or reset tables on startup.
 
 ## Run
 
@@ -45,29 +45,21 @@ Or use:
 .\scripts\run-local.ps1
 ```
 
-## Gmail SMTP
+## SMTP
 
-SMTP is configured for:
-
-```txt
-besticfashion.myntra@gmail.com
-smtp.gmail.com:587
-```
-
-The Gmail SMTP password is already configured in appsettings for this project. If you need to override it on another machine or deployment, set this environment variable before running:
+SMTP is disabled by default for local development. To send real email, configure these environment variables before running:
 
 ```powershell
-$env:Smtp__Password = "YOUR_16_CHARACTER_GOOGLE_APP_PASSWORD"
+$env:Smtp__Host = "smtp.gmail.com"
+$env:Smtp__Port = "587"
+$env:Smtp__EnableSsl = "true"
+$env:Smtp__Username = "YOUR_SMTP_USERNAME"
+$env:Smtp__Password = "YOUR_SMTP_PASSWORD"
+$env:Smtp__From = "YOUR_FROM_ADDRESS"
 .\scripts\run-local.ps1
 ```
 
-For a persistent Windows user-level value:
-
-```powershell
-[Environment]::SetEnvironmentVariable("Smtp__Password", "YOUR_16_CHARACTER_GOOGLE_APP_PASSWORD", "User")
-```
-
-Open a new terminal after setting the persistent value.
+Never commit SMTP passwords or database credentials to appsettings files.
 
 If build fails with a message like `The process cannot access the file ... because it is being used by another process`, stop the old backend process first:
 

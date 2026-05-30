@@ -9,8 +9,6 @@ services:
         value: Production
       - key: ASPNETCORE_URLS
         value: http://+:8080
-      - key: UseInMemoryDatabase
-        value: "false"
       - key: ExposeOtpForDevelopment
         value: "false"
       - key: MYSQL_ADDON_URI

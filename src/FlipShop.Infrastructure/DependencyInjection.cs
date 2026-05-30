@@ -4,7 +4,6 @@ using FlipShop.Infrastructure.Data;
 using FlipShop.Infrastructure.Repositories;
 using FlipShop.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MySqlConnector;
@@ -18,14 +17,6 @@ public static class DependencyInjection
         var connectionString = GetConfiguredConnectionString(configuration);
         services.AddDbContext<AppDbContext>(options =>
         {
-            if (configuration.GetValue<bool>("UseInMemoryDatabase"))
-            {
-                options
-                    .UseInMemoryDatabase("FlipShopLocal")
-                    .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning));
-                return;
-            }
-
             options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
         });
         services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
