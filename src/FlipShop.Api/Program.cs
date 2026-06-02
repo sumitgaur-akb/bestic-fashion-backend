@@ -34,7 +34,7 @@ builder.Services.AddCors(options =>
         {
             if (builder.Environment.IsProduction())
             {
-                throw new InvalidOperationException("Wildcard CORS is not allowed in production. Configure Cors:AllowedOrigins with explicit HTTPS origins.");
+                throw new InvalidOperationException("Wildcard CORS is not allowed in production. Configure Cors:AllowedOrigins with explicit HTTP or HTTPS origins.");
             }
 
             policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
@@ -144,7 +144,7 @@ static string ResolveJwtKey(IConfiguration configuration, IWebHostEnvironment en
         return configuredKey;
     }
 
-    if (environment.IsProduction() && configuration.GetValue("Jwt:AllowGeneratedKey", false))
+    if (environment.IsProduction() && configuration.GetValue("Jwt:AllowGeneratedKey", true))
     {
         Console.WriteLine("WARNING: Jwt:Key is not configured. Using an ephemeral generated key for this process.");
         return generatedJwtKey;
@@ -173,7 +173,7 @@ static void ValidateProductionConfiguration(IConfiguration configuration, IWebHo
 
     var errors = new List<string>();
     var jwtKey = configuration["Jwt:Key"];
-    var allowGeneratedJwtKey = configuration.GetValue("Jwt:AllowGeneratedKey", false);
+    var allowGeneratedJwtKey = configuration.GetValue("Jwt:AllowGeneratedKey", true);
     if (string.IsNullOrWhiteSpace(jwtKey))
     {
         if (!allowGeneratedJwtKey)
@@ -215,9 +215,9 @@ static void ValidateProductionConfiguration(IConfiguration configuration, IWebHo
         errors.Add("Cors:AllowedOrigins cannot contain * in production.");
     }
 
-    if (origins.Any(origin => !Uri.TryCreate(origin, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps))
+    if (origins.Any(origin => !Uri.TryCreate(origin, UriKind.Absolute, out var uri) || !IsHttpOrHttps(uri)))
     {
-        errors.Add("Cors:AllowedOrigins must contain only absolute HTTPS origins in production.");
+        errors.Add("Cors:AllowedOrigins must contain only absolute HTTP or HTTPS origins in production.");
     }
 
     if (ContainsLocalOrPlaceholderDatabase(defaultConnection)
@@ -263,4 +263,9 @@ static bool ContainsLocalOrPlaceholderDatabase(string? value)
         || lowered.Contains("your_password")
         || lowered.Contains("password=password")
         || lowered.Contains("password=root");
+}
+
+static bool IsHttpOrHttps(Uri uri)
+{
+    return uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps;
 }

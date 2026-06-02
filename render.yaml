@@ -24,7 +24,9 @@ services:
       - key: Cors__AllowPlatformPreviewOrigins
         value: "true"
       - key: Cors__AllowedOrigins__0
-        sync: false
+        value: http://www.besticfashions.com
+      - key: Cors__AllowedOrigins__1
+        value: https://www.besticfashions.com
       - key: Smtp__Host
         sync: false
       - key: Smtp__Port
