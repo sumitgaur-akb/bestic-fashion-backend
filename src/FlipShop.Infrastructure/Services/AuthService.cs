@@ -98,7 +98,14 @@ public sealed class AuthService(AppDbContext dbContext, IConfiguration configura
 
     private async Task AddRoleAsync(User user, UserRoleName roleName, CancellationToken cancellationToken)
     {
-        var role = await dbContext.Roles.FirstAsync(x => x.Name == roleName.ToString(), cancellationToken);
+        var roleNameText = roleName.ToString();
+        var role = await dbContext.Roles.FirstOrDefaultAsync(x => x.Name == roleNameText, cancellationToken);
+        if (role is null)
+        {
+            role = new Role { Name = roleNameText };
+            await dbContext.Roles.AddAsync(role, cancellationToken);
+        }
+
         user.UserRoles.Add(new UserRole { User = user, Role = role });
     }
 

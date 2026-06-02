@@ -84,7 +84,7 @@ public sealed class SellerManagementService(AppDbContext dbContext, IEmailServic
             x.CreatedAt,
             dbContext.Products.Count(p => p.SellerId == x.Id),
             dbContext.OrderItems.Count(i => i.SellerId == x.Id),
-            dbContext.OrderItems.Where(i => i.SellerId == x.Id).Sum(i => i.LineTotal),
+            dbContext.OrderItems.Where(i => i.SellerId == x.Id).Sum(i => (decimal?)i.LineTotal) ?? 0,
             x.Documents.Count,
             x.Warehouses.Count)).ToArray());
     }
@@ -92,7 +92,7 @@ public sealed class SellerManagementService(AppDbContext dbContext, IEmailServic
     public async Task<ApiResponse<AdminSellerSummaryDto>> GetSummaryAsync(CancellationToken cancellationToken)
     {
         var sellers = await dbContext.Sellers.ToListAsync(cancellationToken);
-        var revenue = await dbContext.OrderItems.SumAsync(x => x.LineTotal, cancellationToken);
+        var revenue = await dbContext.OrderItems.SumAsync(x => (decimal?)x.LineTotal, cancellationToken) ?? 0;
         return ApiResponse<AdminSellerSummaryDto>.Ok(new AdminSellerSummaryDto(
             sellers.Count,
             sellers.Count(x => x.Status == SellerStatus.PendingOtp),

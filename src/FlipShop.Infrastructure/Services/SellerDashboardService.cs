@@ -21,8 +21,8 @@ public sealed class SellerDashboardService(AppDbContext dbContext) : ISellerDash
             await items.CountAsync(x => x.SellerOrderStatus == OrderStatus.Placed || x.SellerOrderStatus == OrderStatus.Confirmed, cancellationToken),
             await items.CountAsync(x => x.SellerOrderStatus == OrderStatus.Delivered, cancellationToken),
             await items.CountAsync(x => x.SellerOrderStatus == OrderStatus.Cancelled, cancellationToken),
-            await items.SumAsync(x => x.LineTotal, cancellationToken),
-            await items.Where(x => x.CreatedAt >= today).SumAsync(x => x.LineTotal, cancellationToken),
+            await items.SumAsync(x => (decimal?)x.LineTotal, cancellationToken) ?? 0,
+            await items.Where(x => x.CreatedAt >= today).SumAsync(x => (decimal?)x.LineTotal, cancellationToken) ?? 0,
             await dbContext.Products.CountAsync(x => x.SellerId == seller.Id, cancellationToken),
             await dbContext.ProductStock.CountAsync(x => x.ProductVariant.Product.SellerId == seller.Id && x.Quantity <= x.LowStockThreshold, cancellationToken));
         return ApiResponse<DashboardSummaryDto>.Ok(summary);
