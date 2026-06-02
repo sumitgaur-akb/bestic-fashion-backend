@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Security.Cryptography;
 using System.Threading.RateLimiting;
 using FlipShop.Api.Middleware;
 using FlipShop.Infrastructure;
@@ -11,6 +12,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
+
+var generatedJwtKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48));
 
 ValidateProductionConfiguration(builder.Configuration, builder.Environment);
 
@@ -26,6 +29,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("frontend", policy =>
     {
         var allowedOrigins = GetConfiguredOrigins(builder.Configuration);
+        var allowPlatformPreviewOrigins = builder.Configuration.GetValue("Cors:AllowPlatformPreviewOrigins", builder.Environment.IsProduction());
         if (allowedOrigins.Contains("*"))
         {
             if (builder.Environment.IsProduction())
@@ -37,7 +41,19 @@ builder.Services.AddCors(options =>
             return;
         }
 
-        policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod();
+        if (allowedOrigins.Length > 0)
+        {
+            policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod();
+            return;
+        }
+
+        if (builder.Environment.IsProduction() && allowPlatformPreviewOrigins)
+        {
+            policy.SetIsOriginAllowed(IsAllowedPlatformPreviewOrigin).AllowAnyHeader().AllowAnyMethod();
+            return;
+        }
+
+        policy.WithOrigins("http://localhost:4200", "http://127.0.0.1:4200").AllowAnyHeader().AllowAnyMethod();
     });
 });
 builder.Services.AddRateLimiter(options =>
@@ -54,7 +70,7 @@ builder.Services.AddRateLimiter(options =>
             }));
 });
 
-var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key must be configured.");
+var jwtKey = ResolveJwtKey(builder.Configuration, builder.Environment, generatedJwtKey);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
@@ -110,9 +126,7 @@ static string[] GetConfiguredOrigins(IConfiguration configuration)
         .Distinct(StringComparer.OrdinalIgnoreCase)
         .ToArray();
 
-    return distinctOrigins.Length > 0
-        ? distinctOrigins
-        : ["http://localhost:4200", "http://127.0.0.1:4200"];
+    return distinctOrigins;
 }
 
 static IEnumerable<string> SplitOrigins(string? value)
@@ -120,6 +134,34 @@ static IEnumerable<string> SplitOrigins(string? value)
     return string.IsNullOrWhiteSpace(value)
         ? []
         : value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+}
+
+static string ResolveJwtKey(IConfiguration configuration, IWebHostEnvironment environment, string generatedJwtKey)
+{
+    var configuredKey = configuration["Jwt:Key"];
+    if (!string.IsNullOrWhiteSpace(configuredKey))
+    {
+        return configuredKey;
+    }
+
+    if (environment.IsProduction() && configuration.GetValue("Jwt:AllowGeneratedKey", false))
+    {
+        Console.WriteLine("WARNING: Jwt:Key is not configured. Using an ephemeral generated key for this process.");
+        return generatedJwtKey;
+    }
+
+    throw new InvalidOperationException("Jwt:Key must be configured.");
+}
+
+static bool IsAllowedPlatformPreviewOrigin(string origin)
+{
+    if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
+    {
+        return false;
+    }
+
+    return uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase)
+        || uri.Host.EndsWith(".onrender.com", StringComparison.OrdinalIgnoreCase);
 }
 
 static void ValidateProductionConfiguration(IConfiguration configuration, IWebHostEnvironment environment)
@@ -131,7 +173,19 @@ static void ValidateProductionConfiguration(IConfiguration configuration, IWebHo
 
     var errors = new List<string>();
     var jwtKey = configuration["Jwt:Key"];
-    Require(jwtKey, "Jwt:Key", errors, minLength: 32);
+    var allowGeneratedJwtKey = configuration.GetValue("Jwt:AllowGeneratedKey", false);
+    if (string.IsNullOrWhiteSpace(jwtKey))
+    {
+        if (!allowGeneratedJwtKey)
+        {
+            Require(jwtKey, "Jwt:Key", errors, minLength: 32);
+        }
+    }
+    else if (jwtKey.Length < 32)
+    {
+        errors.Add("Jwt:Key must be configured with at least 32 characters.");
+    }
+
     if (jwtKey?.Contains("replace-with", StringComparison.OrdinalIgnoreCase) == true)
     {
         errors.Add("Jwt:Key must not use the checked-in placeholder value.");
@@ -149,20 +203,18 @@ static void ValidateProductionConfiguration(IConfiguration configuration, IWebHo
         ],
         "ConnectionStrings:DefaultConnection or MYSQL_ADDON_URI/MYSQL_URL",
         errors);
-    RequireAny(
-        [
-            configuration["Cors:AllowedOrigins"],
-            .. configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? []
-        ],
-        "Cors:AllowedOrigins",
-        errors);
+    var allowPlatformPreviewOrigins = configuration.GetValue("Cors:AllowPlatformPreviewOrigins", true);
+    var origins = GetConfiguredOrigins(configuration);
+    if (origins.Length == 0 && !allowPlatformPreviewOrigins)
+    {
+        errors.Add("Cors:AllowedOrigins must be configured when Cors:AllowPlatformPreviewOrigins is false.");
+    }
 
-    if (GetConfiguredOrigins(configuration).Contains("*"))
+    if (origins.Contains("*"))
     {
         errors.Add("Cors:AllowedOrigins cannot contain * in production.");
     }
 
-    var origins = GetConfiguredOrigins(configuration);
     if (origins.Any(origin => !Uri.TryCreate(origin, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps))
     {
         errors.Add("Cors:AllowedOrigins must contain only absolute HTTPS origins in production.");

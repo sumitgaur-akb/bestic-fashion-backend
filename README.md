@@ -23,6 +23,8 @@ MYSQL_ADDON_URI=mysql://USER:PASSWORD@HOST:3306/DATABASE
 Jwt__Issuer=FlipShop
 Jwt__Audience=FlipShop.Angular
 Jwt__Key=CHANGE_THIS_TO_A_LONG_RANDOM_SECRET
+Jwt__AllowGeneratedKey=true
+Cors__AllowPlatformPreviewOrigins=true
 Cors__AllowedOrigins__0=https://YOUR_VERCEL_APP.vercel.app
 Smtp__Host=YOUR_SMTP_HOST
 Smtp__Port=587
@@ -34,6 +36,10 @@ Smtp__AdminName=Bestic Fashion
 ```
 
 You can also use `ConnectionStrings__DefaultConnection=Server=HOST;Port=3306;Database=DATABASE;User=USER;Password=PASSWORD;`.
+
+When deploying from `render.yaml`, Render generates `Jwt__Key` automatically. If a manually created service does not have `Jwt__Key`, the API can start with an ephemeral generated key when `Jwt__AllowGeneratedKey=true`, but users will need to log in again after every restart. Set a permanent `Jwt__Key` in Render for stable sessions.
+
+If `Cors__AllowedOrigins__0` is not set, production allows HTTPS Vercel and Render preview origins by default. For a locked-down production app, set `Cors__AllowedOrigins__0` to your exact frontend URL and set `Cors__AllowPlatformPreviewOrigins=false`.
 
 After deploy, test `/health` and `/swagger`.
 

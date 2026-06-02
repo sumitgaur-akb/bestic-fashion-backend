@@ -18,7 +18,11 @@ services:
       - key: Jwt__Audience
         value: FlipShop.Angular
       - key: Jwt__Key
-        sync: false
+        generateValue: true
+      - key: Jwt__AllowGeneratedKey
+        value: "true"
+      - key: Cors__AllowPlatformPreviewOrigins
+        value: "true"
       - key: Cors__AllowedOrigins__0
         sync: false
       - key: Smtp__Host
