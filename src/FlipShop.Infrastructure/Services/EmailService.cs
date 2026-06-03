@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Mail;
+using System.Net.Http.Json;
 using FlipShop.Application.DTOs;
 using FlipShop.Application.Interfaces;
 using FlipShop.Domain.Entities;
@@ -10,7 +11,11 @@ using Microsoft.Extensions.Logging;
 
 namespace FlipShop.Infrastructure.Services;
 
-public sealed class EmailService(IConfiguration configuration, AppDbContext dbContext, ILogger<EmailService> logger) : IEmailService
+public sealed class EmailService(
+    IConfiguration configuration,
+    AppDbContext dbContext,
+    IHttpClientFactory httpClientFactory,
+    ILogger<EmailService> logger) : IEmailService
 {
     public Task SendOtpAsync(string recipient, string otp, CancellationToken cancellationToken) =>
         SendAsync(recipient, "Your FlipShop OTP", "Otp", EmailTemplateRenderer.Otp(otp), cancellationToken);
@@ -43,6 +48,15 @@ public sealed class EmailService(IConfiguration configuration, AppDbContext dbCo
 
         try
         {
+            var brevoApiKey = configuration["Brevo:ApiKey"];
+            if (!string.IsNullOrWhiteSpace(brevoApiKey))
+            {
+                await SendWithBrevoAsync(recipient, subject, html, brevoApiKey, cancellationToken);
+                log.Status = EmailStatus.Sent;
+                await dbContext.SaveChangesAsync(cancellationToken);
+                return;
+            }
+
             var host = configuration["Smtp:Host"];
             if (string.IsNullOrWhiteSpace(host))
             {
@@ -90,5 +104,37 @@ public sealed class EmailService(IConfiguration configuration, AppDbContext dbCo
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task SendWithBrevoAsync(
+        string recipient,
+        string subject,
+        string html,
+        string apiKey,
+        CancellationToken cancellationToken)
+    {
+        var senderEmail = configuration["Brevo:SenderEmail"] ?? configuration["Smtp:From"] ?? configuration["Smtp:Username"];
+        if (string.IsNullOrWhiteSpace(senderEmail))
+        {
+            throw new InvalidOperationException("Brevo sender email must be configured.");
+        }
+
+        var senderName = configuration["Brevo:SenderName"] ?? configuration["Smtp:AdminName"] ?? "Bestic Fashion";
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.brevo.com/v3/smtp/email");
+        request.Headers.Add("api-key", apiKey);
+        request.Content = JsonContent.Create(new
+        {
+            sender = new { email = senderEmail, name = senderName },
+            to = new[] { new { email = recipient } },
+            subject,
+            htmlContent = html
+        });
+
+        var response = await httpClientFactory.CreateClient().SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync(cancellationToken);
+            throw new InvalidOperationException($"Brevo email API returned {(int)response.StatusCode}: {error}");
+        }
     }
 }

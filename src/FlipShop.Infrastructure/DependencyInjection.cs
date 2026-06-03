@@ -22,6 +22,7 @@ public static class DependencyInjection
         });
         services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddHttpClient();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IOtpService, OtpService>();
         services.AddScoped<IEmailService, EmailService>();

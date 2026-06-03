@@ -34,6 +34,9 @@ Smtp__Username=YOUR_SMTP_USERNAME
 Smtp__Password=YOUR_SMTP_PASSWORD
 Smtp__From=admin@yourdomain.com
 Smtp__AdminName=Bestic Fashion
+Brevo__ApiKey=YOUR_BREVO_API_KEY
+Brevo__SenderEmail=YOUR_VERIFIED_BREVO_SENDER
+Brevo__SenderName=Bestic Fashion
 ```
 
 You can also use `ConnectionStrings__DefaultConnection=Server=HOST;Port=3306;Database=DATABASE;User=USER;Password=PASSWORD;`.
@@ -41,6 +44,8 @@ You can also use `ConnectionStrings__DefaultConnection=Server=HOST;Port=3306;Dat
 When deploying from `render.yaml`, Render generates `Jwt__Key` automatically. If a manually created service does not have `Jwt__Key`, the API can start with an ephemeral generated key when `Jwt__AllowGeneratedKey=true`, but users will need to log in again after every restart. Set a permanent `Jwt__Key` in Render for stable sessions.
 
 If `Cors__AllowedOrigins__0` is not set, production allows HTTPS Vercel and Render preview origins by default. For a locked-down production app, set `Cors__AllowedOrigins__0` to your exact frontend URL and set `Cors__AllowPlatformPreviewOrigins=false`.
+
+On Render free web services, use `Brevo__ApiKey` because outbound SMTP ports are blocked. When a Brevo API key is configured, the API sends emails over HTTPS and does not use the SMTP settings.
 
 After deploy, test `/health` and `/swagger`.
 
