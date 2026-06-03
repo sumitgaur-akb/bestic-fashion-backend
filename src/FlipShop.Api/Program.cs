@@ -16,6 +16,8 @@ builder.Logging.AddDebug();
 var generatedJwtKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48));
 
 ValidateProductionConfiguration(builder.Configuration, builder.Environment);
+var jwtKey = ResolveJwtKey(builder.Configuration, builder.Environment, generatedJwtKey);
+builder.Configuration["Jwt:Key"] = jwtKey;
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
@@ -70,7 +72,6 @@ builder.Services.AddRateLimiter(options =>
             }));
 });
 
-var jwtKey = ResolveJwtKey(builder.Configuration, builder.Environment, generatedJwtKey);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
