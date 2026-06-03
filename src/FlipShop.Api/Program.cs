@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Threading.RateLimiting;
 using FlipShop.Api.Middleware;
 using FlipShop.Infrastructure;
+using FlipShop.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -87,6 +88,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await ProductionAdminSeeder.SeedAsync(dbContext, app.Configuration);
+}
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.Use(async (context, next) =>

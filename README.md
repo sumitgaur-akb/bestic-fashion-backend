@@ -37,6 +37,9 @@ Smtp__AdminName=Bestic Fashion
 Brevo__ApiKey=YOUR_BREVO_API_KEY
 Brevo__SenderEmail=YOUR_VERIFIED_BREVO_SENDER
 Brevo__SenderName=Bestic Fashion
+AdminBootstrap__Email=YOUR_ADMIN_EMAIL
+AdminBootstrap__Password=YOUR_STRONG_ADMIN_PASSWORD
+AdminBootstrap__FullName=Bestic Fashion Admin
 ```
 
 You can also use `ConnectionStrings__DefaultConnection=Server=HOST;Port=3306;Database=DATABASE;User=USER;Password=PASSWORD;`.
@@ -46,6 +49,8 @@ When deploying from `render.yaml`, Render generates `Jwt__Key` automatically. If
 If `Cors__AllowedOrigins__0` is not set, production allows HTTPS Vercel and Render preview origins by default. For a locked-down production app, set `Cors__AllowedOrigins__0` to your exact frontend URL and set `Cors__AllowPlatformPreviewOrigins=false`.
 
 On Render free web services, use `Brevo__ApiKey` because outbound SMTP ports are blocked. When a Brevo API key is configured, the API sends emails over HTTPS and does not use the SMTP settings.
+
+When `AdminBootstrap__Email` and `AdminBootstrap__Password` are configured, the API ensures that account exists with the `Admin` role at startup.
 
 After deploy, test `/health` and `/swagger`.
 

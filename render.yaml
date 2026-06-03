@@ -47,3 +47,9 @@ services:
         value: besticfashion.myntra@gmail.com
       - key: Brevo__SenderName
         value: Bestic Fashion
+      - key: AdminBootstrap__Email
+        sync: false
+      - key: AdminBootstrap__Password
+        sync: false
+      - key: AdminBootstrap__FullName
+        value: Bestic Fashion Admin
