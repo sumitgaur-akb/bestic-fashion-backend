@@ -35,12 +35,37 @@ public sealed class AuthService(AppDbContext dbContext, IConfiguration configura
         if (validationErrors.Count > 0) return ApiResponse<AuthResult>.Fail("Seller registration validation failed", validationErrors);
         var otpVerified = await dbContext.OtpVerifications.AnyAsync(x => x.Destination == request.Email && x.Purpose == OtpPurpose.Registration && x.VerifiedAt != null && x.VerifiedAt > DateTime.UtcNow.AddMinutes(-30), cancellationToken);
         if (!otpVerified) return ApiResponse<AuthResult>.Fail("Please verify seller email OTP before registration");
-        if (await dbContext.Users.AnyAsync(x => x.Email == request.Email, cancellationToken)) return ApiResponse<AuthResult>.Fail("Email already exists");
-        var user = new User { FullName = request.FullName, Email = request.Email, Mobile = request.Mobile, PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password) };
-        await dbContext.Users.AddAsync(user, cancellationToken);
+        var user = await dbContext.Users
+            .Include(x => x.UserRoles)
+            .FirstOrDefaultAsync(x => x.Email == request.Email, cancellationToken);
+        if (user is not null && !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        {
+            return ApiResponse<AuthResult>.Fail("Email already exists. Use the existing account password to register as a seller.");
+        }
+
+        if (user is null)
+        {
+            user = new User { FullName = request.FullName, Email = request.Email, Mobile = request.Mobile, PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password) };
+            await dbContext.Users.AddAsync(user, cancellationToken);
+        }
+        else
+        {
+            user.FullName = request.FullName;
+            user.Mobile = request.Mobile;
+        }
+
         await AddRoleAsync(user, UserRoleName.Seller, cancellationToken);
         user.EmailVerified = true;
-        await dbContext.Sellers.AddAsync(new Seller { User = user, DisplayName = request.StoreName, Status = SellerStatus.PendingKyc }, cancellationToken);
+        var seller = await dbContext.Sellers.FirstOrDefaultAsync(x => x.UserId == user.Id, cancellationToken);
+        if (seller is null)
+        {
+            await dbContext.Sellers.AddAsync(new Seller { User = user, DisplayName = request.StoreName, Status = SellerStatus.PendingKyc }, cancellationToken);
+        }
+        else
+        {
+            seller.DisplayName = request.StoreName;
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
         await emailService.SendRegistrationSuccessAsync(user.Email, user.FullName, "Seller", cancellationToken);
         return ApiResponse<AuthResult>.Ok(await BuildAuthResultAsync(user, cancellationToken), "Seller registered. Complete KYC for admin approval");
