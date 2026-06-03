@@ -6,10 +6,11 @@ using FlipShop.Domain.Entities;
 using FlipShop.Domain.Enums;
 using FlipShop.Infrastructure.Data;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace FlipShop.Infrastructure.Services;
 
-public sealed class EmailService(IConfiguration configuration, AppDbContext dbContext) : IEmailService
+public sealed class EmailService(IConfiguration configuration, AppDbContext dbContext, ILogger<EmailService> logger) : IEmailService
 {
     public Task SendOtpAsync(string recipient, string otp, CancellationToken cancellationToken) =>
         SendAsync(recipient, "Your FlipShop OTP", "Otp", EmailTemplateRenderer.Otp(otp), cancellationToken);
@@ -50,12 +51,25 @@ public sealed class EmailService(IConfiguration configuration, AppDbContext dbCo
                 return;
             }
 
+            var username = configuration["Smtp:Username"];
+            var password = configuration["Smtp:Password"];
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+            {
+                throw new InvalidOperationException("SMTP username and password must be configured.");
+            }
+
             using var client = new SmtpClient(host, int.Parse(configuration["Smtp:Port"] ?? "587"))
             {
                 EnableSsl = bool.Parse(configuration["Smtp:EnableSsl"] ?? "true"),
-                Credentials = new NetworkCredential(configuration["Smtp:Username"], configuration["Smtp:Password"])
+                UseDefaultCredentials = false,
+                Credentials = new NetworkCredential(username, password)
             };
-            var from = configuration["Smtp:From"] ?? "admin@flipshop.local";
+            var from = configuration["Smtp:From"];
+            if (string.IsNullOrWhiteSpace(from) || from.EndsWith(".local", StringComparison.OrdinalIgnoreCase))
+            {
+                from = username;
+            }
+
             var adminName = configuration["Smtp:AdminName"] ?? "FlipShop Admin";
             using var message = new MailMessage(new MailAddress(from, adminName), new MailAddress(recipient))
             {
@@ -70,6 +84,9 @@ public sealed class EmailService(IConfiguration configuration, AppDbContext dbCo
         {
             log.Status = EmailStatus.Failed;
             log.ErrorMessage = ex.Message;
+            logger.LogError(ex, "SMTP email delivery failed for {Recipient} using template {TemplateKey}", recipient, templateKey);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            throw;
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
